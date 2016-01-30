@@ -44,7 +44,9 @@ object SmoothingKernel {
       if (0 <= distance && distance <= support) {
         val supp_r = support - distance
         val supp_r3 = supp_r * supp_r * supp_r
-        validate(15.0 / (Math.PI * support6) * supp_r3)
+        val result = 15.0 / (Math.PI * support6) * supp_r3
+//        validate(result)
+        result
       } else {
         0.0
       }
@@ -56,7 +58,8 @@ object SmoothingKernel {
       if (0.0 < r && r <= support) {
         val supp_r = support - r
         val supp_r2 = supp_r * supp_r
-        val scale = validate(-45.0 * supp_r2 / (support6 * Math.PI * r)).asInstanceOf[Float]
+        val scale = (-45.0 * supp_r2 / (support6 * Math.PI * r)).asInstanceOf[Float]
+//        validate(scale)
         new Vector2(pos.x * scale, pos.y * scale)
       } else {
         new Vector2()
@@ -72,7 +75,9 @@ object SmoothingKernel {
       if (0 <= distance2 && distance2 <= support2) {
         val supp_r = support2 - distance2
         val supp_r3 = supp_r * supp_r * supp_r
-        validate(315.0 / (64.0 * Math.PI * support9) * supp_r3)
+        val result = 315.0 / (64.0 * Math.PI * support9) * supp_r3
+//        validate(result)
+        result
       } else {
         0.0
       }
@@ -152,12 +157,15 @@ case class Fluid(numParticles: Int,
   val poly6Kernel = new SmoothingKernel.Poly6(support)
   val spikyKernel = new SmoothingKernel.Spiky(support)
   val viscosityKernel = new SmoothingKernel.Viscosity(support)
+
   var particles = Array.fill[Particle](numParticles)(Particle.random(topLeft, bottomRight))
 
   def density(pos: Vector2): Double = {
     particles.fold(0.0) {
       case (sum: Double, particle: Particle) =>
-        validate(sum + particle.mass * poly6Kernel(particle.pos.dst2(pos)))
+        val result = sum + particle.mass * poly6Kernel(particle.pos.dst2(pos))
+//        validate(result)
+        result
     }.asInstanceOf[Double]
   }
 
@@ -169,8 +177,8 @@ case class Fluid(numParticles: Int,
         val dir = pos.cpy.sub(particle.pos)
         val scale = (pressure(pos) + pressure(particle.pos)) / (2.0 * density(particle.pos))
         val result = sum.add(spikyKernel.gradient(dir).scl(scale.asInstanceOf[Float]))
-        validate(result.x)
-        validate(result.y)
+//        validate(result.x)
+//        validate(result.y)
         result
     }
 
@@ -185,8 +193,8 @@ case class Fluid(numParticles: Int,
         dv.scl((1.0 / density(particle.pos)).asInstanceOf[Float])
         val kernelFactor = viscosityKernel.laplacian(pos.cpy.sub(particle.pos))
         val result = sum.mulAdd(dv, (particle.mass * kernelFactor).asInstanceOf[Float])
-        validate(result.x)
-        validate(result.y)
+//        validate(result.x)
+//        validate(result.y)
         result
     }
 
