@@ -19,6 +19,18 @@ android {
         minSdkVersion 8
         targetSdkVersion 21
     }
+    lintOptions {
+        abortOnError false // make sure you're paying attention to the linter output!
+    }
+    // FIXME: How can we apply this simply for all builds? Copy-pasta makes me sad.
+    buildTypes {
+        release {
+            proguardFile 'proguard-project.txt'
+        }
+        debug {
+            proguardFile 'proguard-project.txt'
+        }
+    }
 }
 
 
