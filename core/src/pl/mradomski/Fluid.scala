@@ -4,9 +4,10 @@ import com.badlogic.gdx.graphics.g2d.{Sprite, SpriteBatch}
 import com.badlogic.gdx.math.Vector2
 
 object Constants {
-  val GAS = 100.0f
-  val GRAVITY = 9.81f
-  val SUPPORT = 50.0f
+  val SCALE = 10.0f
+  val GAS = SCALE * 1000.0f
+  val GRAVITY = SCALE * 9.81f
+  val SUPPORT = SCALE * 10.0f
 }
 
 object Assert {
