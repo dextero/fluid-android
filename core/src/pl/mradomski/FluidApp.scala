@@ -72,10 +72,12 @@ class FluidApp extends ApplicationAdapter {
     timeAccumulator.reset()
   }
 
-  override def render() {
+  override def render() = Utils.timeit("render") {
     timeAccumulator.update()
-    while (timeAccumulator.tick(0.33f)) {
-      fluid.step(0.033f)
+    while (timeAccumulator.tick(0.033f)) {
+      Utils.timeit("step") {
+        fluid.step(0.033f)
+      }
     }
 
     Gdx.gl.glClearColor(0, 0, 0, 1)

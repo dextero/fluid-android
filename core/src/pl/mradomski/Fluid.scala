@@ -27,6 +27,15 @@ object Assert {
 
 import Assert._
 
+object Utils {
+  def timeit[T](name: String)(fn: => T): T = {
+    val start = System.nanoTime()
+    val result = fn
+    println(s"$name: ${(System.nanoTime() - start).asInstanceOf[Double] / 1.0e9} s")
+    result
+  }
+}
+
 object SmoothingKernel {
   class Spiky(support: Double) {
     val support6 = Math.pow(support, 6.0)
