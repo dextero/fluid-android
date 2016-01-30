@@ -64,7 +64,7 @@ class FluidApp extends ApplicationAdapter {
   override def resize(width: Int, height: Int) {
     viewport.update(width, height, true)
 
-    val numParticles: Int = 100
+    val numParticles: Int = 50
     val topLeft: Vector2 = new Vector2(0.0f, 0.0f)
     val bottomRight: Vector2 = new Vector2(width.toFloat, height.toFloat)
     fluid = new Fluid(numParticles, topLeft, bottomRight)
