@@ -5,9 +5,7 @@ import com.badlogic.gdx.graphics.{GL20, OrthographicCamera, Texture}
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.badlogic.gdx.utils.viewport.{ScreenViewport, Viewport}
-import com.badlogic.gdx.{InputProcessor, Input, ApplicationAdapter, Gdx}
-
-import scala.collection.mutable
+import com.badlogic.gdx.{ApplicationAdapter, Gdx}
 
 class TimeAccumulator {
   var lastTimeMs = System.currentTimeMillis()
@@ -76,7 +74,7 @@ class FluidApp extends ApplicationAdapter {
   override def resize(width: Int, height: Int) {
     viewport.update(width, height, true)
 
-    val numParticles: Int = 20
+    val numParticles: Int = 100
     val topLeft: Vector2 = new Vector2(0.0f, 0.0f)
     val bottomRight: Vector2 = new Vector2(width.toFloat, height.toFloat)
     fluid = new Fluid(numParticles, topLeft, bottomRight)

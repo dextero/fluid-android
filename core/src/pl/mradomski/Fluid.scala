@@ -5,9 +5,9 @@ import com.badlogic.gdx.math.Vector2
 
 object Constants {
   val SCALE = 100.0f
-  val GAS = SCALE * 100.0f
+  val GAS = SCALE * 2500.0f
   val GRAVITY = SCALE * 9.81f
-  val SUPPORT = SCALE * 1.0f
+  val SUPPORT = SCALE * 2.5f
   val TOUCH_SUPPORT = SCALE * 1.0f
   val TOUCH = SCALE * 1.0f
 }
@@ -27,8 +27,6 @@ object Assert {
     value
   }
 }
-
-import Assert._
 
 object Utils {
   def timeit[T](name: String)(fn: => T): T = {
