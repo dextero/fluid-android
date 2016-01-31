@@ -8,8 +8,8 @@ object Constants {
   val GAS = SCALE * (8.3144598 * 300.0).asInstanceOf[Float] // molar gas constant * temperature [K]
   val GRAVITY = SCALE * 9.81f
   val SUPPORT = SCALE * 2.5f
-  val TOUCH_SUPPORT = SCALE * 1.0f
-  val TOUCH = SCALE * 1.0f
+  val TOUCH_SUPPORT = SCALE * 5.0f
+  val TOUCH = SCALE * 2.0f
 }
 
 object Assert {
@@ -98,12 +98,14 @@ object SmoothingKernel {
     }
   }
 
-  class Linear(support: Double) {
+  class Touch(support: Double) {
     val support2 = Math.pow(support, 2.0)
 
     def apply(dist: Vector2): Double = {
       if (dist.len2() < support2) {
-        dist.len() / (support * 0.5)
+        val d = dist.len() / support
+        val sigma = 0.2
+        Math.exp(-(d * d)/(2.0 * sigma * sigma))
       } else {
         0.0
       }
@@ -175,7 +177,7 @@ case class Fluid(numParticles: Int,
 
   val support = Constants.SUPPORT
   val poly6Kernel = new SmoothingKernel.Poly6(support)
-  val touchKernel = new SmoothingKernel.Linear(Constants.TOUCH_SUPPORT)
+  val touchKernel = new SmoothingKernel.Touch(Constants.TOUCH_SUPPORT)
   val spikyKernel = new SmoothingKernel.Spiky(support)
   val viscosityKernel = new SmoothingKernel.Viscosity(support)
 
@@ -228,6 +230,7 @@ case class Fluid(numParticles: Int,
         val dir = pos.cpy.sub(touch)
         val k = touchKernel(dir).asInstanceOf[Float]
         sum.add(dir.scl(k))
+//        sum.add(dir)
     }
 
     val result = force.scl(Constants.TOUCH)

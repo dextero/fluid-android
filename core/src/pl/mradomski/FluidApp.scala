@@ -49,8 +49,8 @@ class FluidApp extends ApplicationAdapter {
     batch = new SpriteBatch
     img = new Texture("particle.png")
     sprite = new Sprite(img)
-    sprite.setScale(0.2f, 0.2f)
-    sprite.setColor(0.2f, 0.2f, 1.0f, 0.75f)
+    sprite.setScale(0.4f, 0.4f)
+    sprite.setColor(0.5f, 0.5f, 1.0f, 0.75f)
     sprite.setOriginCenter()
 
     camera = new OrthographicCamera()
@@ -74,7 +74,7 @@ class FluidApp extends ApplicationAdapter {
   override def resize(width: Int, height: Int) {
     viewport.update(width, height, true)
 
-    val numParticles: Int = 100
+    val numParticles: Int = 75
     val topLeft: Vector2 = new Vector2(0.0f, 0.0f)
     val bottomRight: Vector2 = new Vector2(width.toFloat, height.toFloat)
     fluid = new Fluid(numParticles, topLeft, bottomRight)
@@ -82,11 +82,11 @@ class FluidApp extends ApplicationAdapter {
     timeAccumulator.reset()
   }
 
-  override def render() = Utils.timeit("render") {
+  override def render() = {
     val touchPositions = getTouchPositions
 
     timeAccumulator.update()
-    val TIMESTEP = 0.1f
+    val TIMESTEP = 1.0f / 24.0f
     while (timeAccumulator.tick(TIMESTEP)) {
       Utils.timeit("step") {
         fluid.step(TIMESTEP, touchPositions)
