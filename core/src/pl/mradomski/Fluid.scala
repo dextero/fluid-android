@@ -3,8 +3,6 @@ package pl.mradomski
 import com.badlogic.gdx.graphics.g2d.{Sprite, SpriteBatch}
 import com.badlogic.gdx.math.Vector2
 
-import scala.collection.mutable
-
 object Constants {
   val SCALE = 100.0f
   val GAS = SCALE * 2500.0f
@@ -125,20 +123,22 @@ object Particle {
     val v = new Vector2(randomFloat(-1.0f, 1.0f),
                         randomFloat(-1.0f, 1.0f))
     val mass = 1.0f
-    Particle(pos, v, mass)
+    Particle(pos, v, mass, 1.0, 1.0)
   }
 }
 
 case class Particle(pos: Vector2,
                     velocity: Vector2,
-                    mass: Float) {
+                    mass: Float,
+                    density: Double,
+                    pressure: Double) {
   def updated(fluid: Fluid,
               dt: Float,
               topLeft: Vector2,
               bottomRight: Vector2,
               touchPositions: Seq[Vector2]): Particle = {
     val p = velocity.scl(dt).add(pos)
-    val v = fluid.acceleration(pos, velocity, touchPositions).scl(dt)
+    val v = fluid.acceleration(this, touchPositions).scl(dt)
     v.y -= Constants.GRAVITY * dt; // gravity
 
     if (p.x < topLeft.x) {
@@ -157,9 +157,13 @@ case class Particle(pos: Vector2,
       v.y = -v.y
     }
 
+    val density = fluid.density(p)
+
     Particle(pos = p,
              velocity = v,
-             mass = mass)
+             mass = mass,
+             density = density,
+             pressure = fluid.pressure(density))
   }
 }
 
@@ -177,26 +181,22 @@ case class Fluid(numParticles: Int,
 
   var particles = Array.fill[Particle](numParticles)(Particle.random(topLeft, bottomRight))
 
-  var densities = mutable.Map[Vector2, Double]()
-
   def density(pos: Vector2): Double = {
-    densities.getOrElseUpdate(
-      pos,
-      particles.fold(0.0) {
-        case (sum: Double, particle: Particle) =>
-          val result = sum + particle.mass * poly6Kernel(particle.pos.dst2(pos))
-  //        validate(result)
-          result
-      }.asInstanceOf[Double])
+    particles.fold(0.0) {
+      case (sum: Double, particle: Particle) =>
+        val result = sum + particle.mass * poly6Kernel(particle.pos.dst2(pos))
+        //        validate(result)
+        result
+    }.asInstanceOf[Double]
   }
 
-  def pressure(pos: Vector2) = Constants.GAS * (density(pos) - REST_DENSITY)
+  def pressure(density: Double) = Constants.GAS * (density - REST_DENSITY)
 
-  def forceDensity(pos: Vector2): Vector2 = {
+  def forceDensity(particle: Particle): Vector2 = {
     val negated = particles.foldLeft(new Vector2()) {
-      case (sum: Vector2, particle: Particle) =>
-        val dir = pos.cpy.sub(particle.pos)
-        val scale = (pressure(pos) + pressure(particle.pos)) / (2.0 * density(particle.pos))
+      case (sum: Vector2, p: Particle) =>
+        val dir = particle.pos.cpy.sub(p.pos)
+        val scale = (particle.pressure + p.pressure) / (2.0 * p.density)
         val result = sum.add(spikyKernel.gradient(dir).scl(scale.asInstanceOf[Float]))
 //        validate(result.x)
 //        validate(result.y)
@@ -206,13 +206,12 @@ case class Fluid(numParticles: Int,
     new Vector2().sub(negated)
   }
 
-  def forceViscosity(pos: Vector2,
-                     velocity: Vector2): Vector2 = {
+  def forceViscosity(particle: Particle): Vector2 = {
     val force = particles.foldLeft(new Vector2()) {
-      case (sum: Vector2, particle: Particle) =>
-        val dv = particle.velocity.cpy.sub(velocity)
-        dv.scl((1.0 / density(particle.pos)).asInstanceOf[Float])
-        val kernelFactor = viscosityKernel.laplacian(pos.cpy.sub(particle.pos))
+      case (sum: Vector2, p: Particle) =>
+        val dv = p.velocity.cpy.sub(particle.velocity)
+        dv.scl((1.0 / p.density).asInstanceOf[Float])
+        val kernelFactor = viscosityKernel.laplacian(particle.pos.cpy.sub(p.pos))
         val result = sum.mulAdd(dv, (particle.mass * kernelFactor).asInstanceOf[Float])
 //        validate(result.x)
 //        validate(result.y)
@@ -238,18 +237,15 @@ case class Fluid(numParticles: Int,
     result
   }
 
-  def acceleration(pos: Vector2,
-                   velocity: Vector2,
+  def acceleration(particle: Particle,
                    touchPositions: Seq[Vector2]): Vector2 = {
-    forceDensity(pos).scl(1.0f / density(pos).asInstanceOf[Float])
-      .add(forceViscosity(pos, velocity))
-      .add(forceTouch(pos, touchPositions))
+    forceDensity(particle.pos).scl(1.0f / particle.density.asInstanceOf[Float])
+      .add(forceViscosity(particle))
+      .add(forceTouch(particle.pos, touchPositions))
   }
 
   def step(dt_unscaled: Float,
            touchPositions: Seq[Vector2]): Unit = {
-    densities.clear()
-
     val dt = dt_unscaled // * 10.0f
     particles = particles.map {
       particle => particle.updated(this, dt, topLeft, bottomRight, touchPositions)
