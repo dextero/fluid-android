@@ -3,6 +3,8 @@ package pl.mradomski
 import com.badlogic.gdx.graphics.g2d.{Sprite, SpriteBatch}
 import com.badlogic.gdx.math.Vector2
 
+import scala.collection.mutable
+
 object Constants {
   val SCALE = 100.0f
   val GAS = SCALE * 2500.0f
@@ -175,13 +177,17 @@ case class Fluid(numParticles: Int,
 
   var particles = Array.fill[Particle](numParticles)(Particle.random(topLeft, bottomRight))
 
+  var densities = mutable.Map[Vector2, Double]()
+
   def density(pos: Vector2): Double = {
-    particles.fold(0.0) {
-      case (sum: Double, particle: Particle) =>
-        val result = sum + particle.mass * poly6Kernel(particle.pos.dst2(pos))
-//        validate(result)
-        result
-    }.asInstanceOf[Double]
+    densities.getOrElseUpdate(
+      pos,
+      particles.fold(0.0) {
+        case (sum: Double, particle: Particle) =>
+          val result = sum + particle.mass * poly6Kernel(particle.pos.dst2(pos))
+  //        validate(result)
+          result
+      }.asInstanceOf[Double])
   }
 
   def pressure(pos: Vector2) = Constants.GAS * (density(pos) - REST_DENSITY)
@@ -242,6 +248,8 @@ case class Fluid(numParticles: Int,
 
   def step(dt_unscaled: Float,
            touchPositions: Seq[Vector2]): Unit = {
+    densities.clear()
+
     val dt = dt_unscaled // * 10.0f
     particles = particles.map {
       particle => particle.updated(this, dt, topLeft, bottomRight, touchPositions)
