@@ -239,7 +239,7 @@ case class Fluid(numParticles: Int,
 
   def acceleration(particle: Particle,
                    touchPositions: Seq[Vector2]): Vector2 = {
-    forceDensity(particle.pos).scl(1.0f / particle.density.asInstanceOf[Float])
+    forceDensity(particle).scl(1.0f / particle.density.asInstanceOf[Float])
       .add(forceViscosity(particle))
       .add(forceTouch(particle.pos, touchPositions))
   }
