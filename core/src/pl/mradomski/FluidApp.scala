@@ -5,7 +5,9 @@ import com.badlogic.gdx.graphics.{GL20, OrthographicCamera, Texture}
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.badlogic.gdx.utils.viewport.{ScreenViewport, Viewport}
-import com.badlogic.gdx.{ApplicationAdapter, Gdx}
+import com.badlogic.gdx.{InputProcessor, Input, ApplicationAdapter, Gdx}
+
+import scala.collection.mutable
 
 class TimeAccumulator {
   var lastTimeMs = System.currentTimeMillis()
@@ -61,10 +63,20 @@ class FluidApp extends ApplicationAdapter {
     viewport.apply(true)
   }
 
+  def getTouchPositions = {
+    (0 to 8).filter(Gdx.input.isTouched).map {
+      idx =>
+        val ret = new Vector2(Gdx.input.getX(idx),
+                              viewport.getScreenHeight - Gdx.input.getY(idx))
+        println(s"touch @ ${ret.x} ${ret.y}")
+        ret
+    }
+  }
+
   override def resize(width: Int, height: Int) {
     viewport.update(width, height, true)
 
-    val numParticles: Int = 50
+    val numParticles: Int = 20
     val topLeft: Vector2 = new Vector2(0.0f, 0.0f)
     val bottomRight: Vector2 = new Vector2(width.toFloat, height.toFloat)
     fluid = new Fluid(numParticles, topLeft, bottomRight)
@@ -73,10 +85,13 @@ class FluidApp extends ApplicationAdapter {
   }
 
   override def render() = Utils.timeit("render") {
+    val touchPositions = getTouchPositions
+
     timeAccumulator.update()
-    while (timeAccumulator.tick(0.033f)) {
+    val TIMESTEP = 0.1f
+    while (timeAccumulator.tick(TIMESTEP)) {
       Utils.timeit("step") {
-        fluid.step(0.033f)
+        fluid.step(TIMESTEP, touchPositions)
       }
     }
 

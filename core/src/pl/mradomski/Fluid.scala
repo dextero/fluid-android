@@ -4,10 +4,12 @@ import com.badlogic.gdx.graphics.g2d.{Sprite, SpriteBatch}
 import com.badlogic.gdx.math.Vector2
 
 object Constants {
-  val SCALE = 10.0f
-  val GAS = SCALE * 1000.0f
+  val SCALE = 100.0f
+  val GAS = SCALE * 100.0f
   val GRAVITY = SCALE * 9.81f
-  val SUPPORT = SCALE * 10.0f
+  val SUPPORT = SCALE * 1.0f
+  val TOUCH_SUPPORT = SCALE * 1.0f
+  val TOUCH = SCALE * 1.0f
 }
 
 object Assert {
@@ -97,6 +99,18 @@ object SmoothingKernel {
       }
     }
   }
+
+  class Linear(support: Double) {
+    val support2 = Math.pow(support, 2.0)
+
+    def apply(dist: Vector2): Double = {
+      if (dist.len2() < support2) {
+        dist.len() / (support * 0.5)
+      } else {
+        0.0
+      }
+    }
+  }
 }
 
 object Particle {
@@ -121,9 +135,10 @@ case class Particle(pos: Vector2,
   def updated(fluid: Fluid,
               dt: Float,
               topLeft: Vector2,
-              bottomRight: Vector2): Particle = {
+              bottomRight: Vector2,
+              touchPositions: Seq[Vector2]): Particle = {
     val p = velocity.scl(dt).add(pos)
-    val v = fluid.acceleration(pos, velocity).scl(dt)
+    val v = fluid.acceleration(pos, velocity, touchPositions).scl(dt)
     v.y -= Constants.GRAVITY * dt; // gravity
 
     if (p.x < topLeft.x) {
@@ -156,6 +171,7 @@ case class Fluid(numParticles: Int,
 
   val support = Constants.SUPPORT
   val poly6Kernel = new SmoothingKernel.Poly6(support)
+  val touchKernel = new SmoothingKernel.Linear(Constants.TOUCH_SUPPORT)
   val spikyKernel = new SmoothingKernel.Spiky(support)
   val viscosityKernel = new SmoothingKernel.Viscosity(support)
 
@@ -202,15 +218,35 @@ case class Fluid(numParticles: Int,
     force.scl(VISCOSITY)
   }
 
-  def acceleration(pos: Vector2, velocity: Vector2): Vector2 = {
-    forceDensity(pos).scl(1.0f / density(pos).asInstanceOf[Float])
-      .add(forceViscosity(pos, velocity))
+  def forceTouch(pos: Vector2,
+                 touchPositions: Seq[Vector2]): Vector2 = {
+    val force = touchPositions.foldLeft(new Vector2()) {
+      case (sum: Vector2, touch: Vector2) =>
+        val dir = pos.cpy.sub(touch)
+        val k = touchKernel(dir).asInstanceOf[Float]
+        sum.add(dir.scl(k))
+    }
+
+    val result = force.scl(Constants.TOUCH)
+    if (force.x > 0.0 && force.y > 0.0) {
+      println(s"touch force = $result")
+    }
+    result
   }
 
-  def step(dt_unscaled: Float): Unit = {
-    val dt = dt_unscaled * 10.0f
+  def acceleration(pos: Vector2,
+                   velocity: Vector2,
+                   touchPositions: Seq[Vector2]): Vector2 = {
+    forceDensity(pos).scl(1.0f / density(pos).asInstanceOf[Float])
+      .add(forceViscosity(pos, velocity))
+      .add(forceTouch(pos, touchPositions))
+  }
+
+  def step(dt_unscaled: Float,
+           touchPositions: Seq[Vector2]): Unit = {
+    val dt = dt_unscaled // * 10.0f
     particles = particles.map {
-      particle => particle.updated(this, dt, topLeft, bottomRight)
+      particle => particle.updated(this, dt, topLeft, bottomRight, touchPositions)
     }
   }
 
