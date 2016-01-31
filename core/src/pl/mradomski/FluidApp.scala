@@ -43,7 +43,7 @@ class FluidApp extends ApplicationAdapter {
   private var camera: OrthographicCamera = null
   private var viewport: Viewport = null
 
-  private val TIMESTEP = 1.0f / 24.0f
+  private val TIMESTEP = 1.0f / 10.0f
   private val numParticles = determineOptimalParticleCount()
 
   def determineOptimalParticleCount() = {
