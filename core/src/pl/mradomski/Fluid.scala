@@ -35,6 +35,17 @@ object Utils {
     println(s"$name: ${(System.nanoTime() - start).asInstanceOf[Double] / 1.0e9} s")
     result
   }
+
+  class TimeoutException() extends Exception
+
+  def timeoutSeconds(limitSeconds: Double)(fn: => Unit): Unit = {
+    val start = System.nanoTime()
+    fn
+    val time = (System.nanoTime() - start).asInstanceOf[Double] / 1.0e9
+    if (time > limitSeconds) {
+      throw new TimeoutException
+    }
+  }
 }
 
 object SmoothingKernel {

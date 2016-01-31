@@ -43,6 +43,36 @@ class FluidApp extends ApplicationAdapter {
   private var camera: OrthographicCamera = null
   private var viewport: Viewport = null
 
+  private val TIMESTEP = 1.0f / 24.0f
+  private val numParticles = determineOptimalParticleCount()
+
+  def determineOptimalParticleCount() = {
+    println("determining optimal particle count")
+
+    var numParticles = 10
+    var next = numParticles
+
+    try {
+      while (true) {
+        next = (numParticles * 1.25).asInstanceOf[Int]
+        val fluid = new Fluid(next, new Vector2(0.0f, 0.0f), new Vector2(1.0f, 1.0f))
+
+        Utils.timeoutSeconds(TIMESTEP / 1.25) {
+          fluid.step(TIMESTEP, List.fill(4)(new Vector2(0.5f, 0.5f)))
+        }
+
+        numParticles = next
+      }
+    } catch {
+      case _: Utils.TimeoutException =>
+        println(s"timed out at $next")
+      case e: Exception => throw e
+    }
+
+    println(s"optimal particle count: $numParticles")
+    numParticles
+  }
+
   override def create() {
     GdxNativesLoader.load()
 
@@ -74,7 +104,6 @@ class FluidApp extends ApplicationAdapter {
   override def resize(width: Int, height: Int) {
     viewport.update(width, height, true)
 
-    val numParticles: Int = 75
     val topLeft: Vector2 = new Vector2(0.0f, 0.0f)
     val bottomRight: Vector2 = new Vector2(width.toFloat, height.toFloat)
     fluid = new Fluid(numParticles, topLeft, bottomRight)
@@ -86,7 +115,6 @@ class FluidApp extends ApplicationAdapter {
     val touchPositions = getTouchPositions
 
     timeAccumulator.update()
-    val TIMESTEP = 1.0f / 24.0f
     while (timeAccumulator.tick(TIMESTEP)) {
       Utils.timeit("step") {
         fluid.step(TIMESTEP, touchPositions)
