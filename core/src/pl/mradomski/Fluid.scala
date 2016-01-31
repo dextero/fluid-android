@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.Vector2
 
 object Constants {
   val SCALE = 100.0f
-  val GAS = SCALE * 2500.0f
+  val GAS = SCALE * (8.3144598 * 300.0).asInstanceOf[Float] // molar gas constant * temperature [K]
   val GRAVITY = SCALE * 9.81f
   val SUPPORT = SCALE * 2.5f
   val TOUCH_SUPPORT = SCALE * 1.0f
