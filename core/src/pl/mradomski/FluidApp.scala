@@ -100,7 +100,7 @@ class FluidApp extends ApplicationAdapter {
     pixelImg = new Texture("pixel.png")
     pixelSprite = new Sprite(pixelImg)
 
-    val pixelSize = 20.0f
+    val pixelSize = 80.0f
     pixelSprite.setScale(pixelSize, pixelSize)
     pixelSprite.setColor(0.5f, 0.5f, 1.0f, 0.75f)
     pixelSprite.setOriginCenter()

@@ -258,8 +258,15 @@ case class Fluid(numParticles: Int,
       .add(forceTouch(particle.pos, touchPositions))
   }
 
-  var minDensity = 0.0
-  var maxDensity = 0.0
+  val minMaxDensity = {
+    val randomPoint = () => new Vector2(Utils.randomFloat(topLeft.x, bottomRight.x),
+                                        Utils.randomFloat(topLeft.y, bottomRight.y))
+    val densities = Array.fill(100)(density(randomPoint()))
+    (densities.foldLeft(1.0)(Math.min),
+     densities.foldLeft(0.0)(Math.max))
+  }
+  val minDensity = particles.map(_.density).foldLeft(1.0)(Math.min) * 1.25
+  val maxDensity = particles.map(_.density).foldLeft(0.0)(Math.max) * 0.8
 
   def step(dt_unscaled: Float,
            touchPositions: Seq[Vector2]): Unit = {
@@ -267,19 +274,18 @@ case class Fluid(numParticles: Int,
     particles = particles.map {
       particle => particle.updated(this, dt, topLeft, bottomRight, touchPositions)
     }
-
-    val densities = particles.map(_.density)
-    minDensity = densities.foldLeft(1.0)(Math.min)
-    maxDensity = densities.foldLeft(0.0)(Math.max)
   }
 
   def normalizeDensity(d: Double): Double = {
-    if (d <= minDensity) {
+    val min = minMaxDensity._1
+    val max = minMaxDensity._2
+
+    if (d <= min) {
       0.0
-    } else if (d >= maxDensity) {
+    } else if (d >= max) {
       1.0
     } else {
-      (d - minDensity) / (maxDensity - minDensity)
+      (d - min) / (max - min)
     }
   }
 
@@ -289,6 +295,7 @@ case class Fluid(numParticles: Int,
     particles.foreach {
       p =>
         particleSprite.setPosition(p.pos.x, p.pos.y)
+        particleSprite.setAlpha(normalizeDensity(p.density).asInstanceOf[Float])
         particleSprite.draw(batch)
     }
 
