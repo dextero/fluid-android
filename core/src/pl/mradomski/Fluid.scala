@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.Vector2
 
 object Constants {
   val SCALE = 100.0f
-  val GAS = SCALE * (8.3144598 * 300.0).asInstanceOf[Float] // molar gas constant * temperature [K]
+  val GAS = SCALE * 2.0f * (8.3144598 * 300.0).asInstanceOf[Float] // molar gas constant * temperature [K]
   val GRAVITY = SCALE * 9.81f
   val SUPPORT = SCALE * 2.5f
   val TOUCH_SUPPORT = SCALE * 5.0f
@@ -150,8 +150,8 @@ case class Particle(pos: Vector2,
               topLeft: Vector2,
               bottomRight: Vector2,
               touchPositions: Seq[Vector2]): Particle = {
-    val p = velocity.scl(dt).add(pos)
-    val v = fluid.acceleration(this, touchPositions).scl(dt)
+    val v = fluid.acceleration(this, touchPositions).scl(dt).add(velocity)
+    val p = v.scl(dt).cpy.add(pos)
     v.y -= Constants.GRAVITY * dt; // gravity
 
     if (p.x < topLeft.x) {
