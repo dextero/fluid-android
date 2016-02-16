@@ -34,8 +34,10 @@ class TimeAccumulator {
 
 class FluidApp extends ApplicationAdapter {
   private var batch: SpriteBatch = null
-  private var img: Texture = null
-  private var sprite: Sprite = null
+  private var particleImg: Texture = null
+  private var pixelImg: Texture = null
+  private var particleSprite: Sprite = null
+  private var pixelSprite: Sprite = null
   private var fluid: Fluid = null
 
   private var timeAccumulator = new TimeAccumulator()
@@ -44,7 +46,10 @@ class FluidApp extends ApplicationAdapter {
   private var viewport: Viewport = null
 
   private val TIMESTEP = 1.0f / 10.0f
-  private val numParticles = determineOptimalParticleCount()
+  private var numParticles = 0
+
+  private var topLeft: Vector2 = new Vector2()
+  private var bottomRight: Vector2 = new Vector2()
 
   def determineOptimalParticleCount() = {
     println("determining optimal particle count")
@@ -59,6 +64,15 @@ class FluidApp extends ApplicationAdapter {
 
         Utils.timeoutSeconds(TIMESTEP / 1.25) {
           fluid.step(TIMESTEP, List.fill(4)(new Vector2(0.5f, 0.5f)))
+        }
+        Utils.timeoutSeconds(1.0 / 30.0) {
+          val xElems = ((bottomRight.x - topLeft.x) / pixelSprite.getScaleX).asInstanceOf[Int]
+          val yElems = ((bottomRight.y - topLeft.y) / pixelSprite.getScaleY).asInstanceOf[Int]
+
+          for (i <- 1 to xElems * yElems) {
+            fluid.density(new Vector2(Utils.randomFloat(0.0f, 1.0f),
+                                      Utils.randomFloat(0.0f, 1.0f)))
+          }
         }
 
         numParticles = next
@@ -77,11 +91,19 @@ class FluidApp extends ApplicationAdapter {
     GdxNativesLoader.load()
 
     batch = new SpriteBatch
-    img = new Texture("particle.png")
-    sprite = new Sprite(img)
-    sprite.setScale(0.4f, 0.4f)
-    sprite.setColor(0.5f, 0.5f, 1.0f, 0.75f)
-    sprite.setOriginCenter()
+    particleImg = new Texture("particle.png")
+    particleSprite = new Sprite(particleImg)
+    particleSprite.setScale(0.4f, 0.4f)
+    particleSprite.setColor(0.5f, 0.5f, 0.5f, 0.75f)
+    particleSprite.setOriginCenter()
+
+    pixelImg = new Texture("pixel.png")
+    pixelSprite = new Sprite(pixelImg)
+
+    val pixelSize = 20.0f
+    pixelSprite.setScale(pixelSize, pixelSize)
+    pixelSprite.setColor(0.5f, 0.5f, 1.0f, 0.75f)
+    pixelSprite.setOriginCenter()
 
     camera = new OrthographicCamera()
     val yDown = false
@@ -104,8 +126,10 @@ class FluidApp extends ApplicationAdapter {
   override def resize(width: Int, height: Int) {
     viewport.update(width, height, true)
 
-    val topLeft: Vector2 = new Vector2(0.0f, 0.0f)
-    val bottomRight: Vector2 = new Vector2(width.toFloat, height.toFloat)
+    topLeft = new Vector2(0.0f, 0.0f)
+    bottomRight = new Vector2(width.toFloat, height.toFloat)
+
+    numParticles = determineOptimalParticleCount()
     fluid = new Fluid(numParticles, topLeft, bottomRight)
 
     timeAccumulator.reset()
@@ -127,7 +151,7 @@ class FluidApp extends ApplicationAdapter {
     camera.update()
     batch.setProjectionMatrix(camera.combined)
     batch.begin()
-    fluid.draw(batch, sprite)
+    fluid.draw(batch, particleSprite, pixelSprite)
     batch.end()
   }
 }

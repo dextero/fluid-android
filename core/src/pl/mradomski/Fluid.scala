@@ -29,6 +29,10 @@ object Assert {
 }
 
 object Utils {
+  def randomFloat(min: Float, max: Float): Float = {
+    Math.random().asInstanceOf[Float] * (max - min) + min
+  }
+
   def timeit[T](name: String)(fn: => T): T = {
     val start = System.nanoTime()
     val result = fn
@@ -125,16 +129,12 @@ object SmoothingKernel {
 }
 
 object Particle {
-  private def randomFloat(min: Float, max: Float): Float = {
-    Math.random().asInstanceOf[Float] * (max - min) + min
-  }
-
   def random(topLeft: Vector2,
              bottomRight: Vector2): Particle = {
-    val pos = new Vector2(randomFloat(topLeft.x, bottomRight.x),
-                          randomFloat(topLeft.y, bottomRight.y))
-    val v = new Vector2(randomFloat(-1.0f, 1.0f),
-                        randomFloat(-1.0f, 1.0f))
+    val pos = new Vector2(Utils.randomFloat(topLeft.x, bottomRight.x),
+                          Utils.randomFloat(topLeft.y, bottomRight.y))
+    val v = new Vector2(Utils.randomFloat(-1.0f, 1.0f),
+                        Utils.randomFloat(-1.0f, 1.0f))
     val mass = 1.0f
     Particle(pos, v, mass, 1.0, 1.0)
   }
@@ -258,20 +258,53 @@ case class Fluid(numParticles: Int,
       .add(forceTouch(particle.pos, touchPositions))
   }
 
+  var minDensity = 0.0
+  var maxDensity = 0.0
+
   def step(dt_unscaled: Float,
            touchPositions: Seq[Vector2]): Unit = {
     val dt = dt_unscaled // * 10.0f
     particles = particles.map {
       particle => particle.updated(this, dt, topLeft, bottomRight, touchPositions)
     }
+
+    val densities = particles.map(_.density)
+    minDensity = densities.foldLeft(1.0)(Math.min)
+    maxDensity = densities.foldLeft(0.0)(Math.max)
+  }
+
+  def normalizeDensity(d: Double): Double = {
+    if (d <= minDensity) {
+      0.0
+    } else if (d >= maxDensity) {
+      1.0
+    } else {
+      (d - minDensity) / (maxDensity - minDensity)
+    }
   }
 
   def draw(batch: SpriteBatch,
-           sprite: Sprite) = {
+           particleSprite: Sprite,
+           pixelSprite: Sprite) = {
     particles.foreach {
       p =>
-        sprite.setPosition(p.pos.x, p.pos.y)
-        sprite.draw(batch)
+        particleSprite.setPosition(p.pos.x, p.pos.y)
+        particleSprite.draw(batch)
+    }
+
+    val stepsX = ((bottomRight.x - topLeft.x) / pixelSprite.getScaleX).asInstanceOf[Int]
+    val stepsY = ((bottomRight.y - topLeft.y) / pixelSprite.getScaleY).asInstanceOf[Int]
+
+    for (x <- 0 to stepsX) {
+      for (y <- 0 to stepsY) {
+        val pos = new Vector2((x.asInstanceOf[Float] + 0.5f) * pixelSprite.getScaleX,
+                              (y.asInstanceOf[Float] + 0.5f) * pixelSprite.getScaleY)
+        val dens = density(pos)
+
+        pixelSprite.setAlpha(normalizeDensity(dens).asInstanceOf[Float])
+        pixelSprite.setPosition(pos.x, pos.y)
+        pixelSprite.draw(batch)
+      }
     }
   }
 }
