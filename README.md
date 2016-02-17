@@ -5,7 +5,10 @@ Projekt zaliczeniowy na przedmiot "Wirtualna rzeczywistosc i wizualizacja" na AG
 Podczas uruchomienia ilość cząsteczek jest wyznaczana empirycznie w taki sposób, aby pojedynczy krok symulacji zajmował nie więcej niż 0.1 sekundy.
 
 Paczka APK dla Androida: [http://student.agh.edu.pl/~mradomsk/files/fluid-android.apk](http://student.agh.edu.pl/~mradomsk/files/fluid-android.apk)
-Wideo: [![youtube](http://img.youtube.com/vi/wyBZcDcbnIE/0.jpg)](http://www.youtube.com/watch?v=wyBZcDcbnIE "Symulacja cieczy")
+
+Wideo:
+
+[![youtube](http://img.youtube.com/vi/wyBZcDcbnIE/0.jpg)](http://www.youtube.com/watch?v=wyBZcDcbnIE "Symulacja cieczy")
 
 ## Kompilacja/uruchamianie
 
